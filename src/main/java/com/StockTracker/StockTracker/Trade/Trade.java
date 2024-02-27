@@ -6,6 +6,8 @@ import lombok.NoArgsConstructor;
 import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import java.util.UUID;
+
 
 import java.time.LocalDateTime;
 
@@ -87,4 +89,6 @@ public class Trade {
         // Assuming saleDate is in the format "yyyy-MM-dd"
         this.saleDate = LocalDateTime.parse(saleDate + "T00:00:00");
     }
+
+
 }
