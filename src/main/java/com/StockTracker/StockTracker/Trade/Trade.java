@@ -21,6 +21,7 @@ public class Trade {
     @Id
     private ObjectId id;
 
+    private int referenceNumber;
     private String owner;
     private String transactionType;
     private String stockName;
@@ -30,16 +31,19 @@ public class Trade {
     private LocalDateTime buyDate;
     private LocalDateTime saleDate;
 
+
     private double totalBuyAmount;
     private double totalSaleAmount;
     private double percentAmount;
     private double profit;
+
 
     public void setBuyPrice(double buyPrice) {
         this.buyPrice = buyPrice;
         calculateTotalBuyAmount();
         calculateProfit();
         calculatePercentBuyAmount();
+        this.referenceNumber = -1;
     }
 
     public void setSalePrice(double salePrice) {
