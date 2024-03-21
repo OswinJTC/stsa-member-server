@@ -2,7 +2,9 @@ package com.StockTracker.StockTracker.Trade;
 
 
 
+import com.StockTracker.StockTracker.System.SystemRepository;
 import com.StockTracker.StockTracker.User.User;
+import com.StockTracker.StockTracker.System.System;
 import com.StockTracker.StockTracker.User.UserRepository;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,10 +31,16 @@ public class TradeService {
     @Autowired
     private UserRepository userRepository;
 
-    private int nextReferenceNumber = 1; // Starting reference number
+    @Autowired
+    private SystemRepository systemRepository;
+
+
 
     public Trade createTrade(Trade trade) {
-        trade.setReferenceNumber(generateNextReferenceNumber()); // Set the reference number
+
+        System system = systemRepository.findAllBy("Oswin").orElseThrow(() -> new IllegalArgumentException("Keeper not found"));
+
+        trade.setReferenceNumber(system.getNUM_OF_TRADE()); // Set the reference number
         Trade savedTrade = tradeRepository.insert(trade);
 
         // Update the corresponding user with the new trade
@@ -41,12 +49,13 @@ public class TradeService {
         user.getUser_trades().add(savedTrade);
         userRepository.save(user);
 
+
+        system.setNUM_OF_TRADE((system.getNUM_OF_TRADE()+1));
+        systemRepository.save(system);
+
         return savedTrade;
     }
 
-    private int generateNextReferenceNumber() {
-        return nextReferenceNumber++;
-    }
 
     public void deleteTrade(int tradeReference, String owner) {
         Optional<Trade> optionalTrade = tradeRepository.findByReferenceNumber(tradeReference);
