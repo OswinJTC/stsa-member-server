@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query; // Import the correct Query class
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -24,7 +26,14 @@ public class UserService {
     @Autowired
     private MongoTemplate mongoTemplate;
 
-
+    public String findUserEmailByUsername(String username){
+        Optional<User> userOptional = userRepository.findByUsername(username);
+        if(userOptional.isPresent()){
+            return userOptional.get().getEmail();
+        } else {
+            return null; // Or handle it based on your requirement
+        }
+    }
 
     public User findUserByUsername(String username){
         Optional<User> userOptional = userRepository.findByUsername(username);
@@ -40,6 +49,9 @@ public class UserService {
         User savedUser = userRepository.insert(user);
         return savedUser;
     }
+
+
+
 
 
 
