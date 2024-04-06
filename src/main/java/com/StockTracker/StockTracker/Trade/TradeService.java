@@ -1,7 +1,10 @@
 package com.StockTracker.StockTracker.Trade;
 
 
-
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import com.StockTracker.StockTracker.System.SystemRepository;
 import com.StockTracker.StockTracker.User.User;
 import com.StockTracker.StockTracker.System.System;
@@ -10,12 +13,9 @@ import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.core.query.Update;
-import org.springframework.http.ResponseEntity;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.PathVariable;
+
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -26,6 +26,9 @@ import java.util.UUID;
 public class TradeService {
 
     @Autowired
+    private JavaMailSender mailSender;
+
+    @Autowired
     private TradeRepository tradeRepository;
 
     @Autowired
@@ -33,6 +36,27 @@ public class TradeService {
 
     @Autowired
     private SystemRepository systemRepository;
+
+
+
+
+    public void sendTradeEmail(String toEmail,
+                                String subject,
+                                String body) {
+        MimeMessage message = mailSender.createMimeMessage();
+        try {
+            MimeMessageHelper helper = new MimeMessageHelper(message, true);
+            helper.setFrom("stockanalyzer2024@gmail.com");
+            helper.setTo(toEmail);
+            helper.setSubject(subject);
+            helper.setText(body, true); // Set the second parameter to true to indicate HTML content
+            mailSender.send(message);
+            java.lang.System.out.println("Mail Send nice");
+        } catch (MessagingException e) {
+            e.printStackTrace();
+        }
+    }
+
 
 
 
@@ -75,4 +99,8 @@ public class TradeService {
     public List<Trade> allTrades() {
         return tradeRepository.findAll();
     }
+
+
+
+
 }
