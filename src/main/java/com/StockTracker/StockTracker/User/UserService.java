@@ -70,7 +70,7 @@ public class UserService {
 
     private void sendVerificationEmail(User user, String token) {
         String subject = "Email Verification";
-        String verificationLink = "http://localhost:8080/userApi/verify?token=" + token;
+        String verificationLink = "https://stsa-member-server.onrender.com/userApi/verify?token=" + token;
         String body = "Please verify your email by clicking the following link: " + verificationLink;
 
         SimpleMailMessage message = new SimpleMailMessage();
