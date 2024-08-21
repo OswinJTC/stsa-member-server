@@ -1,11 +1,16 @@
 package com.StockTracker.StockTracker.User;
 
 import com.StockTracker.StockTracker.PdfCardGenerator;
+import com.mongodb.client.gridfs.GridFSBucket;
+import jakarta.mail.internet.MimeMessage;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.gridfs.GridFsTemplate;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -13,11 +18,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+import java.io.InputStream;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -34,17 +35,17 @@ public class UserService {
     @Autowired
     private JavaMailSender mailSender;
 
+    @Autowired
+    private GridFsTemplate gridFsTemplate;
+
+    @Autowired
+    private GridFSBucket gridFSBucket;
+
     private static final String PENDING_COLLECTION = "pending_users";
     private static final String APPROVED_COLLECTION = "approved_users";
 
-    private static final String UPLOAD_DIR = "uploads/";
-
-    public String registerUser(User user, MultipartFile file) throws IOException {
+    public String registerUser(User user) {
         String token = UUID.randomUUID().toString();
-
-        // Store the uploaded file
-        String imageUrl = storeFile(file, user.getEmail());
-        user.setImageUrl(imageUrl);
 
         // Store user in Redis with a TTL (e.g., 15 minutes)
         redisTemplate.opsForValue().set(token, user, 15, TimeUnit.MINUTES);
@@ -54,19 +55,20 @@ public class UserService {
 
         return token;
     }
-    private String storeFile(MultipartFile file, String email) throws IOException {
-        // Generate a unique file name
-        String fileName = email + "_" + file.getOriginalFilename();
-        Path path = Paths.get(UPLOAD_DIR, fileName);  // Save in the UPLOAD_DIR directory
-        Files.createDirectories(path.getParent());
 
-        // Save the file locally
-        Files.write(path, file.getBytes());
 
-        // Return only the file name (without the UPLOAD_DIR prefix)
-        return fileName;
+    public String storeFile(MultipartFile file) throws IOException {
+        // Store the file in GridFS
+        InputStream inputStream = file.getInputStream();
+        String fileName = file.getOriginalFilename();
+        ObjectId fileId = gridFsTemplate.store(inputStream, fileName, file.getContentType());
+        return fileId.toString();  // Return the file ID to be stored in the User document
     }
 
+    public InputStream getFileById(String id) throws IOException {
+        // Retrieve the file from GridFS by ID
+        return gridFSBucket.openDownloadStream(new ObjectId(id));
+    }
 
     private void sendVerificationEmail(User user, String token) {
         String subject = "Email Verification";
@@ -106,7 +108,13 @@ public class UserService {
                 mongoTemplate.save(user, APPROVED_COLLECTION);
 
                 // Generate PDF for approved user
-                generatePdfForUser(user);
+                String pdfFileId = generateAndStorePdf(user);
+                user.setPdfFileId(pdfFileId); // Store the PDF file ID in the User document
+
+                mongoTemplate.save(user, APPROVED_COLLECTION); // Save the user with PDF file ID
+
+                // Send the PDF to the user's email
+                sendPdfByEmail(user, pdfFileId);
 
                 return true;
             } catch (IOException e) {
@@ -120,17 +128,18 @@ public class UserService {
         return false;
     }
 
-
-    private void generatePdfForUser(User user) throws IOException {
+    private String generateAndStorePdf(User user) throws IOException {
         PdfCardGenerator generator = new PdfCardGenerator();
         String logoPath = "https://i1.wp.com/stsa.tw/wp-content/uploads/2021/05/Asset-9@6x.png?resize=768%2C769&ssl=1";
         String qrCodePath = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d0/QR_code_for_mobile_English_Wikipedia.svg/1920px-QR_code_for_mobile_English_Wikipedia.svg.png";
 
-        // Generate a custom filename for the PDF, for example using the user's name
-        String pdfFileName = user.getEnglishName() + "_MemberCard";
+        // Generate the PDF and get the InputStream
+        InputStream pdfStream = generator.generateCard(user.getEnglishName(), "School: " + user.getSchool(), logoPath, qrCodePath);
 
-        // Pass the custom filename to the generateCard method
-        generator.generateCard(user.getEnglishName(), "School: " + user.getSchool(), logoPath, qrCodePath, pdfFileName);
+        // Store the PDF in GridFS
+        ObjectId pdfFileId = gridFsTemplate.store(pdfStream, user.getEnglishName() + "_MemberCard.pdf", "application/pdf");
+
+        return pdfFileId.toString(); // Return the GridFS file ID
     }
 
 
@@ -148,13 +157,39 @@ public class UserService {
         }
     }
 
-
     public List<User> getAllApprovedMembers() {
         return mongoTemplate.findAll(User.class, APPROVED_COLLECTION);
     }
 
     public List<User> getAllPending() {
         return mongoTemplate.findAll(User.class, PENDING_COLLECTION);
+    }
+
+    public InputStream getPdfById(String id) throws IOException {
+        return gridFSBucket.openDownloadStream(new ObjectId(id));
+    }
+
+    private void sendPdfByEmail(User user, String pdfFileId) {
+        try {
+            // Retrieve the PDF file from GridFS
+            InputStream pdfStream = getPdfById(pdfFileId);
+            byte[] pdfBytes = pdfStream.readAllBytes();
+
+            // Create a MimeMessage
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true);
+            helper.setTo(user.getEmail());
+            helper.setSubject("Your Membership Card");
+            helper.setText("Dear " + user.getEnglishName() + ",\n\nPlease find attached your membership card PDF.\n\nBest regards,\nYour Team");
+
+            // Attach the PDF
+            helper.addAttachment(user.getEnglishName() + "_MemberCard.pdf", new ByteArrayResource(pdfBytes));
+
+            // Send the email
+            mailSender.send(message);
+        } catch (Exception e) {
+            System.err.println("Failed to send email with PDF: " + e.getMessage());
+        }
     }
 
 }
