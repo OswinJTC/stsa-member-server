@@ -22,7 +22,7 @@ import java.util.List;
 
 
 @RestController
-@CrossOrigin(origins = "https://stsa-member-client.onrender.com/")
+@CrossOrigin(origins = "https://member.stsa.tw/")
 @RequestMapping("/userApi")
 public class UserController {
 
