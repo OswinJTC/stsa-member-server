@@ -8,6 +8,8 @@ import org.apache.pdfbox.pdmodel.font.PDType0Font;
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 
 import java.awt.Color;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -17,7 +19,7 @@ import java.nio.file.StandardCopyOption;
 
 public class PdfCardGenerator {
 
-    public void generateCard(String name, String school, String logoUrl, String qrCodeUrl, String outputFileName) throws IOException {
+    public InputStream generateCard(String name, String school, String logoUrl, String qrCodeUrl) throws IOException {
         // Download images to local paths
         String logoPath = downloadImage(logoUrl, "logo.png");
         String qrCodePath = downloadImage(qrCodeUrl, "qrCode.png");
@@ -62,13 +64,12 @@ public class PdfCardGenerator {
 
         contentStream.close();
 
-        // Save the document to a file with the provided name
-        String outputFilePath = "output/" + outputFileName + ".pdf";
-        document.save(outputFilePath);
+        // Save the document to a ByteArrayOutputStream
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        document.save(outputStream);
         document.close();
 
-        // Print the path to the console
-        System.out.println("PDF saved at: " + outputFilePath);
+        return new ByteArrayInputStream(outputStream.toByteArray());
     }
 
     private String downloadImage(String imageUrl, String outputFileName) throws IOException {
@@ -86,5 +87,4 @@ public class PdfCardGenerator {
             throw e;
         }
     }
-
 }

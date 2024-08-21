@@ -2,6 +2,7 @@ package com.StockTracker.StockTracker.User;
 
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpStatus;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -26,7 +28,6 @@ public class UserController {
 
     @Autowired
     private UserService userService;
-
     @PostMapping("/register")
     public ResponseEntity<?> createUser(
             @RequestPart("user") User user,
@@ -46,13 +47,16 @@ public class UserController {
         }
 
         try {
-            // Register user and save the uploaded file
-            String token = userService.registerUser(user, file);
+            String fileId = userService.storeFile(file);
+            user.setFileId(fileId); // Store the GridFS file ID in the User document
+
+            String token = userService.registerUser(user); // Now pass only the User object
             return new ResponseEntity<>("Verification email sent. Please check your inbox.", HttpStatus.OK);
         } catch (IOException e) {
             return new ResponseEntity<>("Failed to upload image", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
 
     @GetMapping("/verify")
     public ResponseEntity<String> verifyUser(@RequestParam("token") String token) {
@@ -105,21 +109,36 @@ public class UserController {
         List<User> users = userService.getAllPending();
         return new ResponseEntity<>(users, HttpStatus.OK);
     }
-
-    @GetMapping("/images/{filename}")
-    public ResponseEntity<Resource> serveImage(@PathVariable String filename) {
+    @GetMapping("/images/{id}")
+    public ResponseEntity<Resource> serveImage(@PathVariable String id) {
         try {
-            Path imagePath = Paths.get("uploads/").resolve(filename).normalize();
-            Resource resource = new UrlResource(imagePath.toUri());
-            if (resource.exists() || resource.isReadable()) {
+            InputStream stream = userService.getFileById(id);
+            if (stream != null) {
                 return ResponseEntity.ok()
                         .contentType(MediaType.IMAGE_JPEG) // Adjust content type based on your file type
-                        .body(resource);
+                        .body(new InputStreamResource(stream));
             } else {
-                throw new RuntimeException("Could not read the file!");
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
             }
-        } catch (MalformedURLException e) {
-            throw new RuntimeException("Error: " + e.getMessage());
+        } catch (IOException e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    @GetMapping("/pdf/{id}")
+    public ResponseEntity<Resource> getUserPdf(@PathVariable String id) {
+        try {
+            InputStream stream = userService.getPdfById(id);
+            if (stream != null) {
+                return ResponseEntity.ok()
+                        .contentType(MediaType.APPLICATION_PDF) // Set content type to PDF
+                        .body(new InputStreamResource(stream));
+            } else {
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
+        } catch (IOException e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
 }

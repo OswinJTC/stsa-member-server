@@ -23,6 +23,8 @@ public class User {
     private String year_of_study;
     private String birthday;
     private String contact_number;
+    private String fileId;
+    private String pdfFileId;
 
     private String imageUrl;
 }
