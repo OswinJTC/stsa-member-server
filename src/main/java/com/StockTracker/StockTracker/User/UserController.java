@@ -13,10 +13,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 
 
@@ -102,6 +98,17 @@ public class UserController {
     public ResponseEntity<List<User>> getAllApprovedMembers() {
         List<User> users = userService.getAllApprovedMembers();
         return new ResponseEntity<>(users, HttpStatus.OK);
+    }
+
+    @GetMapping("/member/{uuid}")
+    public ResponseEntity<User> getMemberByUUID(@PathVariable String uuid) {
+        User user = userService.getUserByUUID(uuid);
+
+        if (user != null) {
+            return new ResponseEntity<>(user, HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
     }
 
     @GetMapping("/pending")
