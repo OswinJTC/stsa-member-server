@@ -17,7 +17,7 @@ import java.util.List;
 
 
 @RestController
-@CrossOrigin(origins = "https://member.stsa.tw/")
+@CrossOrigin(origins = "https://member.stsa.tw")
 @RequestMapping("/userApi")
 public class UserController {
 
