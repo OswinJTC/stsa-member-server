@@ -46,7 +46,9 @@ public class UserService {
 
     @Autowired
     private MemberNumberService memberNumberService;
+    
     private static final String PENDING_COLLECTION = "pending_users";
+    
     private static final String APPROVED_COLLECTION = "approved_users";
 
     public String registerUser(User user) {
