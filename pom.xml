@@ -69,6 +69,7 @@
 			<artifactId>spring-boot-starter-thymeleaf</artifactId>
 		</dependency>
 
+
 		<!-- ZXing Core for QR code generation -->
 		<dependency>
 			<groupId>com.google.zxing</groupId>

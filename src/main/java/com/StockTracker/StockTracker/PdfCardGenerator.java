@@ -32,7 +32,9 @@ import java.util.UUID;
 
 public class PdfCardGenerator {
 
+
     public InputStream generateCard(String taiwaneseName, String member_id, String uniqueId) throws IOException, WriterException {
+
         // Download images to local paths
         String backgroundPath = "output/名片底色.jpg";
 
@@ -98,4 +100,6 @@ public class PdfCardGenerator {
         BitMatrix bitMatrix = qrCodeWriter.encode(data, BarcodeFormat.QR_CODE, 200, 200);
         return MatrixToImageWriter.toBufferedImage(bitMatrix, new MatrixToImageConfig());
     }
+
 }
+

@@ -46,7 +46,6 @@ public class UserService {
 
     @Autowired
     private MemberNumberService memberNumberService;
-
     private static final String PENDING_COLLECTION = "pending_users";
     private static final String APPROVED_COLLECTION = "approved_users";
 
@@ -124,8 +123,7 @@ public class UserService {
                 }else if(user.getCurrent_citizenship().equals("PR")){
                     user.setMember_id("P2024"+ memberNumber.getNumber() + "R");
                 }
-
-
+              
                 //Remove the assigned number from the collection
                 memberNumberService.deleteNumberById(memberNumber.getId());
 
@@ -143,6 +141,8 @@ public class UserService {
 
 
                 return true;
+              
+              
             } catch (Exception e) {
                 System.err.println("Unexpected error during user approval: " + e.getMessage());
                 return false;
@@ -150,8 +150,7 @@ public class UserService {
         }
         return false;
     }
-
-
+  
     private String generateAndStorePdf(User user) throws IOException, WriterException {
         PdfCardGenerator generator = new PdfCardGenerator();
 
@@ -163,6 +162,7 @@ public class UserService {
 
         return pdfFileId.toString(); // Return the GridFS file ID
     }
+
 
 
     public boolean rejectUser(ObjectId userId) {
@@ -195,7 +195,8 @@ public class UserService {
     public InputStream getPdfById(String id) throws IOException {
         return gridFSBucket.openDownloadStream(new ObjectId(id));
     }
-
+  
+  
     private void sendPdfByEmail(User user, String pdfFileId) {
         try {
             // Retrieve the PDF file from GridFS
@@ -218,5 +219,6 @@ public class UserService {
             System.err.println("Failed to send email with PDF: " + e.getMessage());
         }
     }
+
 
 }
