@@ -137,8 +137,10 @@ public class UserService {
                 String pdfFileId = generateAndStorePdf(user);
                 user.setPdfFileId(pdfFileId);
 
+
                 // Send the PDF to the user's email
                 sendPdfByEmail(user, pdfFileId);
+
 
                 return true;
             } catch (Exception e) {
