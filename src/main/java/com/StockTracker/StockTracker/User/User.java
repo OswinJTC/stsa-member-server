@@ -17,14 +17,26 @@ public class User {
 
     private String taiwaneseName;
     private String englishName;
+    private String birthday;
+    private String gender;
+    private String contact_number;
+    private String line_id;
     private String email;
+    private String current_citizenship;
+
     private String school;
     private String program;
+    private String education_level;
     private String year_of_study;
-    private String birthday;
-    private String contact_number;
+
+    private String date_of_enrollment;
+    private String date_of_graduation;
+
+    private String unique_uuid;
+    private String member_id;
+
+
     private String fileId;
     private String pdfFileId;
-
     private String imageUrl;
 }

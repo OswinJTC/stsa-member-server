@@ -5,9 +5,20 @@ import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.font.PDType0Font;
+import org.apache.pdfbox.pdmodel.graphics.image.LosslessFactory;
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 
+
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.WriterException;
+import com.google.zxing.qrcode.QRCodeWriter;
+import com.google.zxing.common.BitMatrix;
+import com.google.zxing.client.j2se.MatrixToImageConfig;
+import com.google.zxing.client.j2se.MatrixToImageWriter;
+
+
 import java.awt.Color;
+import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -16,19 +27,26 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.UUID;
+
 
 public class PdfCardGenerator {
 
-    public InputStream generateCard(String name, String school, String logoUrl, String qrCodeUrl) throws IOException {
+
+    public InputStream generateCard(String taiwaneseName, String member_id, String uniqueId) throws IOException, WriterException {
+
         // Download images to local paths
-        String logoPath = downloadImage(logoUrl, "logo.png");
-        String qrCodePath = downloadImage(qrCodeUrl, "qrCode.png");
+        String backgroundPath = "output/名片底色.jpg";
+
+        // Generate a unique identifier and construct a unique URL
+        String uniqueUrl = "http://localhost:3000/authorizedMember/" + uniqueId;
 
         // Create a new document
         PDDocument document = new PDDocument();
 
-        // Set the page size to be horizontal (like a real name card)
-        PDPage page = new PDPage(new PDRectangle(PDRectangle.A6.getHeight(), PDRectangle.A6.getWidth()));
+        // Adjust the page size to make it flatter
+        PDRectangle cardSize = new PDRectangle(400, 250); // Flatter dimensions
+        PDPage page = new PDPage(cardSize);
         document.addPage(page);
 
         // Load Noto Sans TC font from the resources folder
@@ -37,30 +55,35 @@ public class PdfCardGenerator {
         // Create a content stream to draw on the page
         PDPageContentStream contentStream = new PDPageContentStream(document, page);
 
-        // Set the background color to light brown
-        contentStream.setNonStrokingColor(new Color(210, 180, 140)); // Light brown color
-        contentStream.addRect(0, 0, page.getMediaBox().getWidth(), page.getMediaBox().getHeight());
-        contentStream.fill();
+        // Add the background image to cover the entire page
+        PDImageXObject backgroundImage = PDImageXObject.createFromFile(backgroundPath, document);
+        contentStream.drawImage(backgroundImage, 0, 0, page.getMediaBox().getWidth(), page.getMediaBox().getHeight());
 
-        // Add the logo in the top left corner
-        PDImageXObject logo = PDImageXObject.createFromFile(logoPath, document);
-        contentStream.drawImage(logo, 20, page.getMediaBox().getHeight() - 80, 120, 120); // Adjust size and position
+        // Generate the QR code in-memory
+        BufferedImage qrCodeImage = generateQRCodeImage(uniqueUrl);
+
+        // Convert BufferedImage to PDImageXObject
+        PDImageXObject qrCodeXObject = LosslessFactory.createFromImage(document, qrCodeImage);
+
+        // Add the QR code in the top right corner
+        contentStream.drawImage(qrCodeXObject, page.getMediaBox().getWidth() - 140, page.getMediaBox().getHeight() - 150, 100, 100); // Adjust size and position
 
         // Set the text color to black
-        contentStream.setNonStrokingColor(Color.BLACK);
+        contentStream.setNonStrokingColor(Color.WHITE);
 
-        // Add the name and school information on the right of the logo
+        // Add the fake member number above the name
         contentStream.beginText();
-        contentStream.setFont(font, 24);
-        contentStream.newLineAtOffset(100, page.getMediaBox().getHeight() - 40);
-        contentStream.showText(name);
-        contentStream.newLineAtOffset(0, -30);
-        contentStream.showText(school);
+        contentStream.setFont(font, 18);
+        contentStream.newLineAtOffset(page.getMediaBox().getWidth() - 140, 50); // Position above the name
+        contentStream.showText(member_id);
         contentStream.endText();
 
-        // Add the QR code below the information
-        PDImageXObject qrCode = PDImageXObject.createFromFile(qrCodePath, document);
-        contentStream.drawImage(qrCode, 100, page.getMediaBox().getHeight() - 160, 80, 80); // Adjust size and position
+        // Add "會員" in front of the Taiwanese name
+        contentStream.beginText();
+        contentStream.setFont(font, 18);
+        contentStream.newLineAtOffset(page.getMediaBox().getWidth() - 140, 20); // Adjust the position for the name
+        contentStream.showText("會員 " + taiwaneseName); // Add "會員" before the name
+        contentStream.endText();
 
         contentStream.close();
 
@@ -72,19 +95,11 @@ public class PdfCardGenerator {
         return new ByteArrayInputStream(outputStream.toByteArray());
     }
 
-    private String downloadImage(String imageUrl, String outputFileName) throws IOException {
-        URL url = new URL(imageUrl);
-        try (InputStream in = url.openStream()) {
-            if (in == null) {
-                throw new IOException("Failed to open stream for URL: " + imageUrl);
-            }
-            Path outputPath = Path.of("output", outputFileName);
-            Files.createDirectories(outputPath.getParent());
-            Files.copy(in, outputPath, StandardCopyOption.REPLACE_EXISTING);
-            return outputPath.toString();
-        } catch (Exception e) {
-            System.err.println("Failed to download image from URL: " + imageUrl);
-            throw e;
-        }
+    private BufferedImage generateQRCodeImage(String data) throws WriterException {
+        QRCodeWriter qrCodeWriter = new QRCodeWriter();
+        BitMatrix bitMatrix = qrCodeWriter.encode(data, BarcodeFormat.QR_CODE, 200, 200);
+        return MatrixToImageWriter.toBufferedImage(bitMatrix, new MatrixToImageConfig());
     }
+
 }
+
