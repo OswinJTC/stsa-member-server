@@ -37,7 +37,7 @@ public class PdfCardGenerator {
         // Convert InputStream to BufferedImage
         BufferedImage bufferedImage = ImageIO.read(backgroundStream);
 
-        String uniqueUrl = "http://localhost:3000/authorizedMember/" + uniqueId;
+        String uniqueUrl = "https://member.stsa.tw/authorizedMember/" + uniqueId;
 
         // Create a new document
         PDDocument document = new PDDocument();
