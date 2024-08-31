@@ -6,10 +6,12 @@ import com.StockTracker.StockTracker.PdfCardGenerator;
 import com.google.zxing.WriterException;
 import com.mongodb.client.gridfs.GridFSBucket;
 import jakarta.mail.internet.MimeMessage;
+import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.mongodb.gridfs.GridFsTemplate;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -78,7 +80,7 @@ public class UserService {
     }
 
     private void sendVerificationEmail(User user, String token) {
-        String subject = "會員註冊=>郵件驗證";
+        String subject = "會員郵件驗證";
         String verificationLink = "https://member-server.stsa.tw/userApi/verify?token=" + token;
         String body = "您好，點選連結即可完成郵件驗證: " + verificationLink;
 
@@ -153,6 +155,7 @@ public class UserService {
         return false;
     }
 
+
     private String generateAndStorePdf(User user) throws IOException, WriterException {
         PdfCardGenerator generator = new PdfCardGenerator();
 
@@ -162,9 +165,18 @@ public class UserService {
         // Store the PDF in GridFS
         ObjectId pdfFileId = gridFsTemplate.store(pdfStream, user.getEnglishName() + "_MemberCard.pdf", "application/pdf");
 
+        // Create a query to find the document by its ID
+        Query query = new Query(Criteria.where("_id").is(pdfFileId));
+
+        // Create an update object to add the unique_uuid field
+        Update update = new Update();
+        update.set("unique_uuid", user.getUnique_uuid());
+
+        // Perform the update operation
+        mongoTemplate.updateFirst(query, update, "fs.files");
+
         return pdfFileId.toString(); // Return the GridFS file ID
     }
-
 
 
     public boolean rejectUser(ObjectId userId) {
@@ -197,6 +209,20 @@ public class UserService {
     public InputStream getPdfById(String id) throws IOException {
         return gridFSBucket.openDownloadStream(new ObjectId(id));
     }
+
+    public InputStream getPdfByUUID(String uuid) throws IOException {
+        // Create a query to find the PDF by unique_uuid
+        Query query = new Query(Criteria.where("unique_uuid").is(uuid));
+        Document fileDocument = mongoTemplate.findOne(query, Document.class, "fs.files");
+
+        if (fileDocument != null) {
+            ObjectId fileId = fileDocument.getObjectId("_id");
+            return gridFSBucket.openDownloadStream(fileId);
+        } else {
+            return null; // No PDF found for the given unique_uuid
+        }
+    }
+
 
 
     private void sendPdfByEmail(User user, String pdfFileId) {

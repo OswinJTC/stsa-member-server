@@ -17,7 +17,7 @@ import java.util.List;
 
 
 @RestController
-@CrossOrigin(origins = "https://member.stsa.tw")
+@CrossOrigin(origins = "http://localhost:3000")
 @RequestMapping("/userApi")
 public class UserController {
 
@@ -130,11 +130,10 @@ public class UserController {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-
-    @GetMapping("/pdf/{id}")
-    public ResponseEntity<Resource> getUserPdf(@PathVariable String id) {
+    @GetMapping("/pdf/{uuid}")
+    public ResponseEntity<Resource> getUserPdf(@PathVariable String uuid) {
         try {
-            InputStream stream = userService.getPdfById(id);
+            InputStream stream = userService.getPdfByUUID(uuid);
             if (stream != null) {
                 return ResponseEntity.ok()
                         .contentType(MediaType.APPLICATION_PDF) // Set content type to PDF
@@ -146,5 +145,6 @@ public class UserController {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
 
 }
