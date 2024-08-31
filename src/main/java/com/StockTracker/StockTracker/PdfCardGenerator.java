@@ -29,14 +29,12 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.UUID;
 
-
 public class PdfCardGenerator {
-
 
     public InputStream generateCard(String taiwaneseName, String member_id, String uniqueId) throws IOException, WriterException {
 
-        // Download images to local paths
-        String backgroundPath = "output/名片底色.jpg";
+        // Load the background image from the resources folder
+        String backgroundPath = getClass().getResource("/output/card_background.jpg").getPath();
 
         // Generate a unique identifier and construct a unique URL
         String uniqueUrl = "http://localhost:3000/authorizedMember/" + uniqueId;
@@ -66,7 +64,7 @@ public class PdfCardGenerator {
         PDImageXObject qrCodeXObject = LosslessFactory.createFromImage(document, qrCodeImage);
 
         // Add the QR code in the top right corner
-        contentStream.drawImage(qrCodeXObject, page.getMediaBox().getWidth() - 140, page.getMediaBox().getHeight() - 150, 100, 100); // Adjust size and position
+        contentStream.drawImage(qrCodeXObject, page.getMediaBox().getWidth() - 138, page.getMediaBox().getHeight() - 150, 100, 100); // Adjust size and position
 
         // Set the text color to black
         contentStream.setNonStrokingColor(Color.WHITE);
@@ -74,14 +72,14 @@ public class PdfCardGenerator {
         // Add the fake member number above the name
         contentStream.beginText();
         contentStream.setFont(font, 18);
-        contentStream.newLineAtOffset(page.getMediaBox().getWidth() - 140, 50); // Position above the name
+        contentStream.newLineAtOffset(page.getMediaBox().getWidth() - 138, 50); // Position above the name
         contentStream.showText(member_id);
         contentStream.endText();
 
         // Add "會員" in front of the Taiwanese name
         contentStream.beginText();
         contentStream.setFont(font, 18);
-        contentStream.newLineAtOffset(page.getMediaBox().getWidth() - 140, 20); // Adjust the position for the name
+        contentStream.newLineAtOffset(page.getMediaBox().getWidth() - 138, 20); // Adjust the position for the name
         contentStream.showText("會員 " + taiwaneseName); // Add "會員" before the name
         contentStream.endText();
 
@@ -100,6 +98,4 @@ public class PdfCardGenerator {
         BitMatrix bitMatrix = qrCodeWriter.encode(data, BarcodeFormat.QR_CODE, 200, 200);
         return MatrixToImageWriter.toBufferedImage(bitMatrix, new MatrixToImageConfig());
     }
-
 }
-

@@ -17,7 +17,7 @@ import java.util.List;
 
 
 @RestController
-@CrossOrigin(origins = "https://member.stsa.tw/")
+@CrossOrigin(origins = "http://localhost:3000")
 @RequestMapping("/userApi")
 public class UserController {
 

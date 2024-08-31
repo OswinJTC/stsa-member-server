@@ -123,7 +123,7 @@ public class UserService {
                 }else if(user.getCurrent_citizenship().equals("PR")){
                     user.setMember_id("P2024"+ memberNumber.getNumber() + "R");
                 }
-              
+
                 //Remove the assigned number from the collection
                 memberNumberService.deleteNumberById(memberNumber.getId());
 
@@ -141,8 +141,8 @@ public class UserService {
 
 
                 return true;
-              
-              
+
+
             } catch (Exception e) {
                 System.err.println("Unexpected error during user approval: " + e.getMessage());
                 return false;
@@ -150,7 +150,7 @@ public class UserService {
         }
         return false;
     }
-  
+
     private String generateAndStorePdf(User user) throws IOException, WriterException {
         PdfCardGenerator generator = new PdfCardGenerator();
 
@@ -195,8 +195,8 @@ public class UserService {
     public InputStream getPdfById(String id) throws IOException {
         return gridFSBucket.openDownloadStream(new ObjectId(id));
     }
-  
-  
+
+
     private void sendPdfByEmail(User user, String pdfFileId) {
         try {
             // Retrieve the PDF file from GridFS
