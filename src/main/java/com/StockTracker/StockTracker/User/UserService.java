@@ -82,7 +82,7 @@ public class UserService {
     private void sendVerificationEmail(User user, String token) {
         String subject = "會員郵件驗證";
         String verificationLink = "https://member-server.stsa.tw/userApi/verify?token=" + token;
-        String body = "您好，點選連結即可完成郵件驗證: " + verificationLink;
+        String body = "您好，請點選連結即可完成郵件驗證: " + verificationLink;
 
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(user.getEmail());
@@ -236,7 +236,7 @@ public class UserService {
             MimeMessageHelper helper = new MimeMessageHelper(message, true);
             helper.setTo(user.getEmail());
             helper.setSubject("STSA會員申請成功通知");
-            helper.setText("親愛的 " + user.getEnglishName() + ",\n\n感謝您申請成為我們的會員！您的會員卡已經生成，請查閱附件中的 PDF 文件。\n\n如果有任何疑問，歡迎隨時聯繫我們。\n\n新加坡學生總會敬上");
+            helper.setText(user.getEnglishName() + " 先生/小姐 您好，" + ",\n\n感謝您申請成為我們的會員！您的會員卡已經生成，請查閱附件中的 PDF 文件。\n\n如果有任何疑問，歡迎隨時聯繫我們。\n\n新加坡學生總會\n敬上");
 
             // Attach the PDF
             helper.addAttachment(user.getTaiwaneseName() + "_STSA會員卡.pdf", new ByteArrayResource(pdfBytes));
