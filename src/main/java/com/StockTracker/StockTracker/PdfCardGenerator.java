@@ -37,7 +37,7 @@ public class PdfCardGenerator {
         String backgroundPath = getClass().getResource("/output/card_background.jpg").getPath();
 
         // Generate a unique identifier and construct a unique URL
-        String uniqueUrl = "http://localhost:3000/authorizedMember/" + uniqueId;
+        String uniqueUrl = "https://member.stsa.tw/authorizedMember/" + uniqueId;
 
         // Create a new document
         PDDocument document = new PDDocument();

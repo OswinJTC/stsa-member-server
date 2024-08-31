@@ -46,7 +46,9 @@ public class UserService {
 
     @Autowired
     private MemberNumberService memberNumberService;
+    
     private static final String PENDING_COLLECTION = "pending_users";
+    
     private static final String APPROVED_COLLECTION = "approved_users";
 
     public String registerUser(User user) {
@@ -77,7 +79,7 @@ public class UserService {
 
     private void sendVerificationEmail(User user, String token) {
         String subject = "會員註冊=>郵件驗證";
-        String verificationLink = "http://localhost:8080/userApi/verify?token=" + token;
+        String verificationLink = "https://member-server.stsa.tw/userApi/verify?token=" + token;
         String body = "您好，點選連結即可完成郵件驗證: " + verificationLink;
 
         SimpleMailMessage message = new SimpleMailMessage();
