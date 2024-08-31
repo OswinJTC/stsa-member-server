@@ -8,7 +8,6 @@ import org.apache.pdfbox.pdmodel.font.PDType0Font;
 import org.apache.pdfbox.pdmodel.graphics.image.LosslessFactory;
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 
-
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.WriterException;
 import com.google.zxing.qrcode.QRCodeWriter;
@@ -16,27 +15,28 @@ import com.google.zxing.common.BitMatrix;
 import com.google.zxing.client.j2se.MatrixToImageConfig;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 
-
+import javax.imageio.ImageIO;
 import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.util.UUID;
 
 public class PdfCardGenerator {
 
     public InputStream generateCard(String taiwaneseName, String member_id, String uniqueId) throws IOException, WriterException {
 
-        // Load the background image from the resources folder
-        String backgroundPath = getClass().getResource("/output/card_background.jpg").getPath();
+        // Load the background image from the resources folder inside the JAR
+        InputStream backgroundStream = getClass().getResourceAsStream("/output/card_background.jpg");
 
-        // Generate a unique identifier and construct a unique URL
+        if (backgroundStream == null) {
+            throw new IOException("Background image not found in resources");
+        }
+
+        // Convert InputStream to BufferedImage
+        BufferedImage bufferedImage = ImageIO.read(backgroundStream);
+
         String uniqueUrl = "http://localhost:3000/authorizedMember/" + uniqueId;
 
         // Create a new document
@@ -53,8 +53,10 @@ public class PdfCardGenerator {
         // Create a content stream to draw on the page
         PDPageContentStream contentStream = new PDPageContentStream(document, page);
 
+        // Convert the BufferedImage to PDImageXObject
+        PDImageXObject backgroundImage = LosslessFactory.createFromImage(document, bufferedImage);
+
         // Add the background image to cover the entire page
-        PDImageXObject backgroundImage = PDImageXObject.createFromFile(backgroundPath, document);
         contentStream.drawImage(backgroundImage, 0, 0, page.getMediaBox().getWidth(), page.getMediaBox().getHeight());
 
         // Generate the QR code in-memory
@@ -66,7 +68,7 @@ public class PdfCardGenerator {
         // Add the QR code in the top right corner
         contentStream.drawImage(qrCodeXObject, page.getMediaBox().getWidth() - 138, page.getMediaBox().getHeight() - 150, 100, 100); // Adjust size and position
 
-        // Set the text color to black
+        // Set the text color to white
         contentStream.setNonStrokingColor(Color.WHITE);
 
         // Add the fake member number above the name
