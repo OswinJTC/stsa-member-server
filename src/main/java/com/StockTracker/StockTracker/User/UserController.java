@@ -57,7 +57,7 @@ public class UserController {
     public ResponseEntity<String> verifyUser(@RequestParam("token") String token) {
         boolean isVerified = userService.verifyUser(token);
         if (isVerified) {
-            return new ResponseEntity<>("Email verified successfully!", HttpStatus.OK);
+            return new ResponseEntity<>("Email 驗證成功！！！可關閉此頁面～", HttpStatus.OK);
         } else {
             return new ResponseEntity<>("Invalid or expired token", HttpStatus.BAD_REQUEST);
         }
