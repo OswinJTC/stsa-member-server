@@ -78,7 +78,7 @@ public class UserService {
     }
 
     private void sendVerificationEmail(User user, String token) {
-        String subject = "會員註冊=>郵件驗證";
+        String subject = "會員郵件驗證";
         String verificationLink = "https://member-server.stsa.tw/userApi/verify?token=" + token;
         String body = "您好，點選連結即可完成郵件驗證: " + verificationLink;
 
